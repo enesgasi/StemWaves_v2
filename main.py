@@ -164,7 +164,7 @@ def run_separation():
 # ---------------- GUI Setup ---------------- #
 
 root = tk.Tk()
-root.title("StemWave Lite - Audio Stem Separator")
+root.title("StemWave v2.0 - Audio Stem Separator")
 root.geometry("540x260")
 root.resizable(False, False)
 
