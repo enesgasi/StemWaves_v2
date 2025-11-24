@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from tkinter import ttk
 import subprocess
 import threading
 import os
@@ -23,7 +24,7 @@ def get_ffmpeg_path():
     """
     Try to locate ffmpeg in a local 'ffmpeg' folder first.
     Fallback to whatever is in the system PATH.
-    
+
     Returns:
         (ffmpeg_dir, ffmpeg_exe_path) or (None, None) if not found.
     """
@@ -46,7 +47,7 @@ def get_ffmpeg_path():
 
 def find_demucs_executable():
     """
-    Prefer demucs from local .venv\Scripts, then fall back to system PATH.
+    Prefer demucs from local .venv/Scripts, then fall back to system PATH.
     """
     base = get_base_dir()
     venv_demucs = os.path.join(base, ".venv", "Scripts", "demucs.exe")
@@ -116,7 +117,18 @@ def run_separation():
 
     # Disable button and update status
     separate_btn.config(state="disabled")
-    status_label.config(text="Separating... Please wait.")
+    status_label.config(text="Separating... This may take a while.")
+    progress_bar.start(10)
+
+    # Decide which model to use based on UI selection
+    mode = model_var.get()
+    if mode == "5":
+        # Experimental 6-sources model: vocals, drums, bass, other, guitar, piano
+        # You get guitar stem here; piano is extra and can be ignored.
+        model_name = "htdemucs_6s"
+    else:
+        # Standard 4-sources: vocals, drums, bass, other
+        model_name = "htdemucs"
 
     def worker():
         try:
@@ -127,18 +139,26 @@ def run_separation():
 
             cmd = [
                 demucs_exe,
-                "-n", "htdemucs",       # model name
-                "-o", output_folder,    # output directory
-                input_file              # input file
+                "-n", model_name,    # model name
+                "-o", output_folder, # output directory
+                input_file           # input file
             ]
 
-            # Run Demucs; raise CalledProcessError on failure
             subprocess.run(cmd, check=True, env=env)
 
-            status_label.config(text="Separation complete!")
+            if mode == "5":
+                status_label.config(
+                    text="Separation complete! (Vocal, Drums, Bass, Other, Guitar + Piano)"
+                )
+            else:
+                status_label.config(
+                    text="Separation complete! (Vocal, Drums, Bass, Other)"
+                )
+
             messagebox.showinfo(
                 "Done",
-                f"Stems saved in:\n{output_folder}"
+                f"Stems saved in:\n{output_folder}\n\n"
+                "Note: For the extended mode, Demucs also outputs a 'piano' stem."
             )
 
         except subprocess.CalledProcessError as e:
@@ -156,6 +176,7 @@ def run_separation():
             )
         finally:
             separate_btn.config(state="normal")
+            progress_bar.stop()
 
     # Run in background so GUI stays responsive
     threading.Thread(target=worker, daemon=True).start()
@@ -164,33 +185,122 @@ def run_separation():
 # ---------------- GUI Setup ---------------- #
 
 root = tk.Tk()
-root.title("StemWave v2.0 - Audio Stem Separator")
-root.geometry("540x260")
+root.title("StemWave v2.1 - Audio Stem Separator")
+
+# Slightly larger, centered window
+root.geometry("1280x640")
 root.resizable(False, False)
+
+# Use ttk theme for a more modern look
+style = ttk.Style()
+try:
+    style.theme_use("clam")
+except tk.TclError:
+    # Fallback if theme is not available
+    pass
+
+# Global font tweaks (optional, comment out if you don't like it)
+default_font = ("Segoe UI", 9)
+root.option_add("*Font", default_font)
+
+main_frame = ttk.Frame(root, padding=15)
+main_frame.pack(fill="both", expand=True)
+
+# Header
+header_frame = ttk.Frame(main_frame)
+header_frame.pack(fill="x", pady=(0, 12))
+
+title_label = ttk.Label(
+    header_frame,
+    text="StemWave v2.1",
+    font=("Segoe UI", 14, "bold")
+)
+title_label.pack(anchor="w")
+
+subtitle_label = ttk.Label(
+    header_frame,
+    text="Deep-learning powered audio stem separation (Demucs)",
+    foreground="#555555"
+)
+subtitle_label.pack(anchor="w")
+
+# Input section
+io_frame = ttk.LabelFrame(main_frame, text="Input / Output", padding=10)
+io_frame.pack(fill="x", pady=(0, 10))
 
 input_path = tk.StringVar()
 output_path = tk.StringVar()
+model_var = tk.StringVar(value="4")  # "4" or "5"
 
-# Input file
-tk.Label(root, text="Input Audio File:").pack(pady=(10, 2))
-input_frame = tk.Frame(root)
-input_frame.pack()
-tk.Entry(input_frame, textvariable=input_path, width=52).pack(side=tk.LEFT, padx=(0, 5))
-tk.Button(input_frame, text="Browse", command=select_input).pack(side=tk.LEFT)
+# Input row
+input_row = ttk.Frame(io_frame)
+input_row.pack(fill="x", pady=5)
 
-# Output folder
-tk.Label(root, text="Output Folder:").pack(pady=(10, 2))
-output_frame = tk.Frame(root)
-output_frame.pack()
-tk.Entry(output_frame, textvariable=output_path, width=52).pack(side=tk.LEFT, padx=(0, 5))
-tk.Button(output_frame, text="Select", command=select_output).pack(side=tk.LEFT)
+ttk.Label(input_row, text="Input audio file:").pack(side="left")
+input_entry = ttk.Entry(input_row, textvariable=input_path)
+input_entry.pack(side="left", fill="x", expand=True, padx=(5, 5))
+ttk.Button(input_row, text="Browse...", command=select_input).pack(side="left")
 
-# Separate button
-separate_btn = tk.Button(root, text="Separate Stems", command=run_separation)
-separate_btn.pack(pady=18)
+# Output row
+output_row = ttk.Frame(io_frame)
+output_row.pack(fill="x", pady=5)
 
-# Status label
-status_label = tk.Label(root, text="", fg="blue")
-status_label.pack(pady=(0, 10))
+ttk.Label(output_row, text="Output folder:").pack(side="left")
+output_entry = ttk.Entry(output_row, textvariable=output_path)
+output_entry.pack(side="left", fill="x", expand=True, padx=(5, 5))
+ttk.Button(output_row, text="Select...", command=select_output).pack(side="left")
+
+# Model selection
+model_frame = ttk.LabelFrame(main_frame, text="Separation Mode", padding=10)
+model_frame.pack(fill="x", pady=(0, 10))
+
+rb_4 = ttk.Radiobutton(
+    model_frame,
+    text="Standard (4 stems: Vocals, Drums, Bass, Other)",
+    value="4",
+    variable=model_var
+)
+rb_4.pack(anchor="w", pady=2)
+
+rb_5 = ttk.Radiobutton(
+    model_frame,
+    text="Extended (5 stems: Vocals, Drums, Bass, Other, Guitar, Piano)",
+    value="5",
+    variable=model_var
+)
+rb_5.pack(anchor="w", pady=2)
+
+model_hint = ttk.Label(
+    model_frame,
+    text="Note: Extended mode uses the experimental htdemucs_6s model.\n"
+         "It outputs Vocals, Drums, Bass, Other, Guitar, and Piano.",
+    foreground="#666666"
+)
+model_hint.pack(anchor="w", pady=(4, 0))
+
+# Action + status
+bottom_frame = ttk.Frame(main_frame)
+bottom_frame.pack(fill="x", pady=(10, 0))
+
+separate_btn = ttk.Button(
+    bottom_frame,
+    text="Separate Stems",
+    command=run_separation
+)
+separate_btn.pack(side="left")
+
+progress_bar = ttk.Progressbar(
+    bottom_frame,
+    mode="indeterminate",
+    length=200
+)
+progress_bar.pack(side="left", padx=(10, 0))
+
+status_label = ttk.Label(
+    main_frame,
+    text="",
+    foreground="#0055aa"
+)
+status_label.pack(anchor="w", pady=(8, 0))
 
 root.mainloop()
