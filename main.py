@@ -7,7 +7,6 @@ import os
 import sys
 import shutil
 
-
 # ---------------- Utility Functions ---------------- #
 
 def get_base_dir():
@@ -124,7 +123,6 @@ def run_separation():
     mode = model_var.get()
     if mode == "5":
         # Experimental 6-sources model: vocals, drums, bass, other, guitar, piano
-        # You get guitar stem here; piano is extra and can be ignored.
         model_name = "htdemucs_6s"
     else:
         # Standard 4-sources: vocals, drums, bass, other
@@ -188,7 +186,7 @@ root = tk.Tk()
 root.title("StemWave v2.1 - Audio Stem Separator")
 
 # Slightly larger, centered window
-root.geometry("1280x640")
+root.geometry("600x500")
 root.resizable(False, False)
 
 # Use ttk theme for a more modern look
