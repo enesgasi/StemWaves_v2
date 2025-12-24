@@ -1,6 +1,6 @@
 # StemWave v2.0
 
-StemWave Lite is a simple desktop application that separates audio tracks into individual stems (vocals, drums, bass, and others) using the Demucs machine learning model. It provides an easy interface for selecting an input audio file and exporting the separated stems to a chosen folder.
+StemWave v2.0 is a simple desktop application that separates audio tracks into individual stems (vocals, drums, bass, and others) using the Demucs machine learning model. It provides an easy interface for selecting an input audio file and exporting the separated stems to a chosen folder.
 
 ## Requirements and Dependencies
 
