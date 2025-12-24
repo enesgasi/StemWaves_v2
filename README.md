@@ -19,3 +19,5 @@ StemWave v2.0 is a simple desktop application that separates audio tracks into i
 5. Choose an output folder.  
 6. Click "Separate Stems" to begin processing.  
 7. The separated stems will be saved inside the selected output folder.
+
+Enjoy your individual steams!
