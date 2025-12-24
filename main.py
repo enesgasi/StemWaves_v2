@@ -10,23 +10,14 @@ import shutil
 # ---------------- Utility Functions ---------------- #
 
 def get_base_dir():
-    """
-    Return the absolute directory containing this script.
-    Works even when frozen with tools like PyInstaller.
-    """
+
     if getattr(sys, "frozen", False):
         return os.path.dirname(sys.executable)
     return os.path.dirname(os.path.abspath(__file__))
 
 
 def get_ffmpeg_path():
-    """
-    Try to locate ffmpeg in a local 'ffmpeg' folder first.
-    Fallback to whatever is in the system PATH.
 
-    Returns:
-        (ffmpeg_dir, ffmpeg_exe_path) or (None, None) if not found.
-    """
     base = get_base_dir()
     local_dir = os.path.join(base, "ffmpeg")
     local_exe = os.path.join(local_dir, "ffmpeg.exe")
@@ -45,9 +36,6 @@ def get_ffmpeg_path():
 
 
 def find_demucs_executable():
-    """
-    Prefer demucs from local .venv/Scripts, then fall back to system PATH.
-    """
     base = get_base_dir()
     venv_demucs = os.path.join(base, ".venv", "Scripts", "demucs.exe")
     if os.path.isfile(venv_demucs):
